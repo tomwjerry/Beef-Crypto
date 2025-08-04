@@ -4,6 +4,24 @@ using System;
 using System.IO;
 using System.Security.Cryptography;
 
+/*
+ * The code is based on the following contributions:
+ *
+ *
+ * The code is placed under public domain by Kazuho Oku <kazuhooku@gmail.com>.
+ *
+ * The SHA1 implementation is based on a public domain implementation written
+ * by Wei Dai and other contributors for libcrypt, used also in liboauth.
+ *
+ * ---------------------------------------------------------------------------
+ *
+ * Also based on the structure provided by:
+ *
+ *
+ * MIT License
+ * Copyright (c) 2019 BeefyTech LLC
+ */
+
 struct SHA1Hash : IParseable<SHA1Hash>, IHashable
 {
 	public uint8[20] mHash;
@@ -74,7 +92,7 @@ struct SHA1Hash : IParseable<SHA1Hash>, IHashable
 	}
 }
 
-class SHA1
+class SHA1 : HashAlgorithm
 {
 	uint32[5] mState;
 	uint32[16] mData;
@@ -219,6 +237,26 @@ class SHA1
         return res;
 	}
 
+    public override void Initialize()
+    {
+    }
+
+    protected override void HashCore(uint8[] array, int ibStart, int cbSize)
+    {
+        Update(.(array, ibStart, cbSize));
+    }
+
+    protected override uint8[] HashFinal()
+    {
+        uint8[] finbyt = new uint8[20];
+        SHA1Hash fin = Finish();
+        for (int i = 0; i < 20; i++)
+        {
+            finbyt[i] = fin.mHash[i];
+        }
+        return finbyt;
+    }
+
 	public static SHA1Hash Hash(Span<uint8> data)
 	{
 		let sha1 = scope SHA1();
@@ -245,7 +283,5 @@ class SHA1
 				return .Err(err);
 			}
 		}
-
-		return sha1.Finish();
 	}
 }
